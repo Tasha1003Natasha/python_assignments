@@ -4,15 +4,15 @@ from colorama import Fore
 
 # Функція, яка приймає шлях до директорії і візуалізує структуру цієї директорії, виводячи імена всіх піддиректорій та файлів.
 
-def create_structure(base_path):
+def create_structure(base_path, indent: int = 0):
     files = sorted([f for f in base_path.iterdir() if f.is_file() and not f.name.startswith(".")], key=lambda x: x.name.lower())
     for f in files:
-        print(Fore.GREEN + f.name)
+         print(" " * indent + Fore.GREEN + f.name)
 
     folders = sorted([d for d in base_path.iterdir() if d.is_dir() and not d.name.startswith(".")], key=lambda x: x.name.lower())
     for folder in folders:
-        print(Fore.BLUE + folder.name + "/")
-        create_structure(folder)
+        print(" " * indent + Fore.BLUE + folder.name + "/")
+        create_structure(folder, indent + 4)
 
 def main():
       if len(sys.argv) < 2:
@@ -26,7 +26,7 @@ def main():
            return
       
       print(Fore.BLUE + current_dir.name + "/")
-      create_structure(current_dir)
+      create_structure(current_dir, 4)
     
     
 if __name__ == "__main__":
