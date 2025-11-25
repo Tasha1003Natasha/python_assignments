@@ -31,45 +31,46 @@ class Record:
     def add_phone(self, phone: str):
         if phone not in self.phones:
             self.phones.append(Phone(phone))
-            return f"Phone added: {self.phones}"
+            return phone
 
     def remove_phone(self, phone: str):
-        self.phones = [p for p in self.phones if p.value != phone]
-        return f"Phone removed: {self.phones}"
+        p = self.find_phone(phone)
+        if p is None:
+            return None
+
+        self.phones.remove(p)
+        return p
 
     def edit_phone(self, phone: str, new_phone: str):
-        for p in self.phones:
-            if p.value == phone:
-                p.value = new_phone
-                return p
-        raise ValueError("Old {phone} number not found.")
+        p = self.find_phone(phone)
+        if p is None:
+            raise ValueError(f"Old phone '{phone}' not found.")
+
+        new_phone_obj = Phone(new_phone)
+        p.value = new_phone_obj.value
+        return p
 
     def find_phone(self, phone: str):
         for p in self.phones:
             if p.value == phone:
                 return p
-        raise ValueError(f"Phone number '{phone}' not found.")
+        return None
 
     def __str__(self):
         return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}"
 
 
 class AddressBook(UserDict):
-    def __init__(self):
-        super().__init__()
-        self.data = {}
-
     def add_record(self, record: Record):
         self.data[record.name.value] = record
-        return f"Record added: {record.name.value}"
+        return record
 
     def find(self, name: Name):
         return self.data.get(name)
 
     def delete(self, name: str):
         if name in self.data:
-            value = self.data.pop(name)
-            return f"Removed: {name}"
+            return self.data.pop(name, None)
 
     def __str__(self):
         result = ["AddressBook:"]
@@ -93,9 +94,9 @@ book.add_record(jane_record)
 print(book)
 
 john = book.find("John")
-john.edit_phone("1234567890", "1112223333")
-
+john.edit_phone("1234567890", "1111111111")
 print(john)
+
 
 found_phone = john.find_phone("5555555555")
 print(f"{john.name}: {found_phone}")
