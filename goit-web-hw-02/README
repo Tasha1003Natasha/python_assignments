@@ -1,0 +1,11 @@
+# Run with Docker
+
+Build Docker image:
+
+```bash
+docker build -t personal-assistant .
+
+Run container in interactive mode:
+
+docker run -it personal-assistant /bin/bash
+python -m goit_web_hw_02.main

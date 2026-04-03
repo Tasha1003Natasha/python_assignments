@@ -1,0 +1,18 @@
+[project]
+name = "goit-web-hw-02"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Tasha Natasha"}
+]
+packages = [{ include = "goit_web_hw_02", from = "src" }]
+
+
+[tool.poetry.dependencies]
+python = ">=3.13"
+colorama = "^0.4.6"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
