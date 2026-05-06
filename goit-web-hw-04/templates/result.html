@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Result</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  <link rel="stylesheet" href="/static/style.css" />
+  </head>
+
+  <body>
+    <nav class="navbar navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+           <img src="/static/logo.png" alt="logo" />
+        </a>
+      </div>
+    </nav>
+
+    <div class="container mt-5">
+      <div class="card p-4 shadow">
+        <h2 class="mb-4">Message received ✅</h2>
+
+        <p><strong>Username:</strong> {{ name }}</p>
+        <p><strong>Message:</strong></p>
+
+        <div class="alert alert-secondary">
+          {{ message }}
+        </div>
+
+        <a href="/message" class="btn btn-primary mt-3">Send another</a>
+      </div>
+    </div>
+  </body>
+</html>
