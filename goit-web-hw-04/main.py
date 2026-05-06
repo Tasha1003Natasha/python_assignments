@@ -7,13 +7,14 @@ from datetime import datetime
 
 
 HOST = '127.0.0.1'
-HTTP_PORT = 3000
 UDP_PORT = 5000
 
 STORAGE = Path("storage")
 STORAGE.mkdir(exist_ok=True)
 FILE = STORAGE / "data.json"
 
+if not FILE.exists():
+    FILE.write_text("{}", encoding="utf-8")
 
 app = Flask(__name__)
 
@@ -88,7 +89,7 @@ def run_server(ip, port):
 
 
 def run_http_server():
-    app.run(host=HOST, port=HTTP_PORT, debug=True, use_reloader=False)
+    app.run(host='0.0.0.0', port=3000, debug=True, use_reloader=False)
 
 
 if __name__ == '__main__':

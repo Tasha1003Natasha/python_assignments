@@ -1,0 +1,34 @@
+# Flask UDP App (Homework)
+
+## 📌 Description
+This project implements a simple web application using Flask and a UDP socket server.
+
+Flow:
+Browser form → Flask → UDP socket → server → JSON file (`storage/data.json`)
+
+Each message is saved with a timestamp as a key.
+
+---
+
+## 🚀 Run locally (Poetry)
+
+Install dependencies:
+
+```bash
+poetry install
+
+---
+## Run with Docker
+
+Build Docker image:
+
+```bash
+docker build -t flask-app .
+
+Run container with volume:
+
+# Mac / Linux
+docker run -p 3000:3000 -v $(pwd)/storage:/app/storage flask-app
+
+# Windows
+docker run -p 3000:3000 -v %cd%/storage:/app/storage flask-app
