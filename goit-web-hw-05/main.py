@@ -62,6 +62,9 @@ def get_last_days(count):
 
 def parse_currency(data):
 
+    if not data or "error" in data:
+        return data
+
     result = {}
 
     date = data.get("date")
