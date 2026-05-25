@@ -1,16 +1,15 @@
 import asyncio
 import json
 import logging
+import sys
 from datetime import datetime, timedelta
+
 import aiohttp
 import names
 import websockets
 from aiofile import async_open
 from websockets import WebSocketServerProtocol
 from websockets.exceptions import ConnectionClosedOK
-from aiopath import AsyncPath
-from aiofile import async_open
-
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,17 +38,12 @@ async def fetch_rate(session, url):
 
 def get_last_days(count):
 
-    days = []
-
-    for i in range(count):
-
-        date = (
+    return [
+        (
             datetime.now() - timedelta(days=i)
         ).strftime("%d.%m.%Y")
-
-        days.append(date)
-
-    return days
+        for i in range(count)
+    ]
 
 
 def parse_currency(data, currencies):
@@ -70,8 +64,8 @@ def parse_currency(data, currencies):
         if currency in currencies:
 
             result[date][currency] = {
-                "sale": item.get("saleRate"),
-                "purchase": item.get("purchaseRate")
+                "sale": item.get("saleRate") or item.get("saleRateNB"),
+                "purchase": item.get("purchaseRate") or item.get("purchaseRateNB")
             }
 
     return result
@@ -87,7 +81,10 @@ async def get_exchange(days, currencies):
 
         for date in days_list:
 
-            url = f"{BASE_URL}/exchange_rates?json&date={date}"
+            url = (
+                f"{BASE_URL}/exchange_rates"
+                f"?json&date={date}"
+            )
 
             tasks.append(
                 fetch_rate(session, url)
@@ -99,7 +96,10 @@ async def get_exchange(days, currencies):
 
         for response in responses:
 
-            parsed_data = parse_currency(response, currencies)
+            parsed_data = parse_currency(
+                response,
+                currencies
+            )
 
             if parsed_data:
                 rate_list.append(parsed_data)
@@ -107,17 +107,16 @@ async def get_exchange(days, currencies):
         return rate_list
 
 
-async def log_exchange(command):
+async def log_exchange(message):
 
-    log_file = AsyncPath("exchange.log")
-
-    if not await log_file.exists():
-        await log_file.touch()
-
-    async with async_open(log_file, "a") as file:
+    async with async_open(
+        "exchange.log",
+        "a"
+    ) as file:
 
         await file.write(
-            f"{datetime.now()} | {command}\n"
+            f"{datetime.now()} | "
+            f"{message}\n"
         )
 
 
@@ -136,9 +135,13 @@ async def exchange_command(message):
             days = int(parts[1])
 
             if days < 1 or days > 10:
-                return "Days count must be between 1 and 10"
+                return (
+                    "Days count must be "
+                    "between 1 and 10"
+                )
 
         except ValueError:
+
             return "Invalid days count"
 
     if len(parts) >= 3:
@@ -148,7 +151,10 @@ async def exchange_command(message):
             for currency in parts[2:]
         ]
 
-    result = await get_exchange(days, currencies)
+    result = await get_exchange(
+        days,
+        currencies
+    )
 
     return json.dumps(
         result,
@@ -157,36 +163,84 @@ async def exchange_command(message):
     )
 
 
+def get_cli_args():
+
+    days = 1
+    currencies = ["USD", "EUR"]
+
+    if len(sys.argv) > 1:
+
+        try:
+
+            days = int(sys.argv[1])
+
+            if days < 1 or days > 10:
+                raise ValueError
+
+        except ValueError:
+
+            print(
+                "Days count must be "
+                "between 1 and 10"
+            )
+
+            sys.exit(1)
+
+    if len(sys.argv) > 2:
+
+        currencies = [
+            currency.upper()
+            for currency in sys.argv[2:]
+        ]
+
+    return days, currencies
+
+
 class Server:
 
     clients = set()
 
-    async def register(self, ws: WebSocketServerProtocol):
+    async def register(
+        self,
+        ws: WebSocketServerProtocol
+    ):
 
         ws.name = names.get_full_name()
 
         self.clients.add(ws)
 
-        logging.info(f'{ws.remote_address} connects')
+        logging.info(
+            f"{ws.remote_address} connects"
+        )
 
-    async def unregister(self, ws: WebSocketServerProtocol):
+    async def unregister(
+        self,
+        ws: WebSocketServerProtocol
+    ):
 
         self.clients.remove(ws)
 
-        logging.info(f'{ws.remote_address} disconnects')
+        logging.info(
+            f"{ws.remote_address} disconnects"
+        )
 
-    async def send_to_clients(self, message: str):
+    async def send_to_clients(
+        self,
+        message: str
+    ):
 
-        if self.clients:
+        for client in self.clients:
+            await client.send(message)
 
-            for client in self.clients:
-                await client.send(message)
-
-    async def ws_handler(self, ws: WebSocketServerProtocol):
+    async def ws_handler(
+        self,
+        ws: WebSocketServerProtocol
+    ):
 
         await self.register(ws)
 
         try:
+
             await self.distribute(ws)
 
         except ConnectionClosedOK:
@@ -196,19 +250,36 @@ class Server:
 
             await self.unregister(ws)
 
-    async def distribute(self, ws: WebSocketServerProtocol):
+    async def distribute(
+        self,
+        ws: WebSocketServerProtocol
+    ):
 
         async for message in ws:
 
-            if message.startswith("exchange"):
+            await log_exchange(f"{ws.name}: {message}")
 
-                await log_exchange(message)
+            if message.startswith(
+                "exchange"
+            ):
 
-                exchange = await exchange_command(message)
+                exchange = (
+                    await exchange_command(
+                        message
+                    )
+                )
 
-                await self.send_to_clients(exchange)
+                await log_exchange(
+                    f": {message}")
 
-            elif message == 'Hello server':
+                await self.send_to_clients(
+                    exchange
+                )
+
+            elif (
+                message
+                == "Hello server"
+            ):
 
                 await self.send_to_clients(
                     "Привіт мої карапузи!"
@@ -217,23 +288,48 @@ class Server:
             else:
 
                 await self.send_to_clients(
-                    f"{ws.name}: {message}"
+                    f"{ws.name}: "
+                    f"{message}"
                 )
 
 
 async def main():
 
+    if len(sys.argv) > 1:
+
+        days, currencies = get_cli_args()
+
+        result = await get_exchange(
+            days,
+            currencies
+        )
+
+        print(
+            json.dumps(
+                result,
+                indent=2,
+                ensure_ascii=False
+            )
+        )
+
+        return
+
     server = Server()
 
     async with websockets.serve(
         server.ws_handler,
-        'localhost',
+        "localhost",
         8080
     ):
+
+        print(
+            "WebSocket server started "
+            "on ws://localhost:8080"
+        )
 
         await asyncio.Future()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
 
     asyncio.run(main())
