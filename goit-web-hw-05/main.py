@@ -154,20 +154,28 @@ async def main():
     days = get_last_days(count)
 
     async with aiohttp.ClientSession() as session:
-        rate_list = []
+
+        tasks = []
 
         for date in days:
+            task = fetch_rate(
+                session,
+                f"{BASE_URL}/exchange_rates?json&date={date}"
+            )
+            tasks.append(task)
 
-            url = f"{BASE_URL}/exchange_rates?json&date={date}"
+        results = await asyncio.gather(*tasks)
 
-            data = await fetch_rate(session, url)
+        rate_list = []
 
+        for data in results:
             parsed_data = parse_currency(data)
 
             if parsed_data:
                 rate_list.append(parsed_data)
 
         print_rates(rate_list)
+
 
 if __name__ == "__main__":
     asyncio.run(main())
