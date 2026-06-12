@@ -70,6 +70,7 @@ def select_3(subject_id=1):
             .order_by(
                 func.avg(Grade.grade).desc()
             )
+            .all()
         )
 
         return result
@@ -83,9 +84,7 @@ def select_4():
                     func.avg(Grade.grade), 2
                 ).label("avg_grade"),
             )
-            .order_by(
-                func.avg(Grade.grade).desc()
-            )
+            .scalar()
         )
 
         return result
@@ -157,6 +156,7 @@ def select_8(teacher_id=1):
             .order_by(
                 func.avg(Grade.grade).desc()
             )
+            .all()
         )
 
         return result
@@ -173,6 +173,7 @@ def select_9(student_id=1):
             .join(Grade, Grade.student_id == Student.id)
             .join(Subject,  Subject.id == Grade.subject_id)
             .filter(Student.id == student_id)
+            .distinct()
             .all()
         )
         return result
@@ -190,6 +191,7 @@ def select_10(teacher_id=1, student_id=1):
             .join(Subject,  Subject.id == Grade.subject_id)
             .join(Teacher,  Teacher.id == Subject.teacher_id)
             .filter(Student.id == student_id, Teacher.id == teacher_id)
+            .distinct()
             .all()
         )
         return result
@@ -248,6 +250,7 @@ def select_12(group_id=1, subject_id=1):
             .join(Grade, Grade.student_id == Student.id)
             .join(Subject,  Subject.id == Grade.subject_id)
             .filter(Group.id == group_id, Subject.id == subject_id, Grade.date_of == last_grade_date)
+            .all()
         )
         return result
 
