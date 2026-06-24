@@ -1,8 +1,7 @@
 import json
-
-from connect import *
+from .connect import *
 from mongoengine.errors import NotUniqueError
-from models import Author, Quote
+from task1.models import Author, Quote
 
 if __name__ == '__main__':
     with open('authors.json', encoding='utf-8') as fd:

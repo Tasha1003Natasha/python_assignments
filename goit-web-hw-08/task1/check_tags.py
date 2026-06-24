@@ -1,5 +1,5 @@
-from connect import *
-from models import Quote
+from .connect import *
+from .models import Quote
 
 all_tags = set()
 
