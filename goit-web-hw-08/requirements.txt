@@ -2,3 +2,4 @@ mongoengine
 pymongo
 redis
 python-dotenv
+pika
