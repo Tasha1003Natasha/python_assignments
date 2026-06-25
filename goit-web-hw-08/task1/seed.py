@@ -2,11 +2,17 @@ import json
 from .connect import *
 from mongoengine.errors import NotUniqueError
 from task1.models import Author, Quote
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+authors_path = BASE_DIR / "authors.json"
+qoutes_path = BASE_DIR / "qoutes.json"
+
 
 if __name__ == '__main__':
-    with open('authors.json', encoding='utf-8') as fd:
+    with authors_path.open(encoding="utf-8") as fd:
         data = json.load(fd)
-
         print("Authors in file:", len(data))
         for el in data:
             try:
@@ -16,7 +22,7 @@ if __name__ == '__main__':
             except NotUniqueError:
                 print(f"Автор вже існує {el.get('fullname')}")
 
-    with open('qoutes.json', encoding='utf-8') as fd:
+    with qoutes_path.open(encoding="utf-8") as fd:
         data = json.load(fd)
         print("🚀 ~ data2:", data)
         for el in data:
