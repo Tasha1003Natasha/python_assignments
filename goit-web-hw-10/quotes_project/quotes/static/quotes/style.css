@@ -19,7 +19,7 @@
 }
 
 .quote .tags {
-    margin-top: 10px;
+  margin-top: 10px;
 }
 
 .tag {
@@ -32,4 +32,17 @@
 
 a {
   text-decoration: none;
+}
+
+.author-details {
+  width: 80%;
+}
+
+.author-title {
+  font-size: 28px;
+}
+
+.author-description {
+  text-align: justify;
+  margin-bottom: 20px;
 }
