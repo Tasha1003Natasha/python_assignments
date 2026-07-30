@@ -46,3 +46,33 @@ a {
   text-align: justify;
   margin-bottom: 20px;
 }
+
+ul.pager {
+  margin-bottom: 100px;
+}
+
+.pager {
+  padding-left: 0;
+  margin: 22px 0;
+  list-style: none;
+  text-align: center;
+}
+
+.pager .previous > a,
+.pager .previous > span {
+  float: left;
+}
+
+.pager li > a,
+.pager li > span {
+  display: inline-block;
+  padding: 5px 14px;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
+  border-radius: 15px;
+}
+
+.pager li > a:hover {
+  background-color: #3677e8;
+  color: #ffffff;
+}

@@ -1,11 +1,24 @@
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, render
 
 from .models import Quote, Author, Tag
 
 
-def main(request):
-    quotes = Quote.objects.select_related("author").prefetch_related("tags")
-    return render(request, 'quotes/index.html', context={"quotes": quotes})
+def main(request, page=1):
+    quotes = Quote.objects.select_related(
+        "author").prefetch_related("tags").all()
+
+    per_page = 10
+    paginator = Paginator(quotes, per_page)
+    quotes_on_page = paginator.get_page(page)
+
+    return render(
+        request,
+        "quotes/index.html",
+        {
+            "quotes": quotes_on_page,
+        }
+    )
 
 
 def author_detail(request, author_id):

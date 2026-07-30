@@ -26,10 +26,30 @@
 
     {% endfor %}
     <nav>
-      <ul class="pager">
-        <li class="next">
-          <a href="/page/2/">Next <span aria-hidden="true">→</span></a>
+      <ul class="pager d-flex justify-content-between mt-4">
+        {% if quotes.has_previous %}
+        <li class="btn-outline-secondary">
+          <a href="{% url 'quotes:page' quotes.previous_page_number %}">
+            <span aria-hidden="true">&larr;</span> Previous
+          </a>
         </li>
+        {% else %}
+        <li class="previous disabled">
+          <span><span aria-hidden="true">&larr;</span> Previous</span>
+        </li>
+        {% endif %}
+
+        {% if quotes.has_next %}
+        <li class="btn-outline-secondary">
+          <a href="{% url 'quotes:page' quotes.next_page_number %}">
+            Next <span aria-hidden="true">&rarr;</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="next disabled">
+          <span>Next <span aria-hidden="true">&rarr;</span></span>
+        </li>
+        {% endif %}
       </ul>
     </nav>
   </div>
