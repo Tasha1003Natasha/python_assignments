@@ -52,6 +52,7 @@ ul.pager {
 }
 
 .pager {
+  font-family: "Raleway", "Helvetica Neue", Helvetica, Arial, sans-serif;
   padding-left: 0;
   margin: 22px 0;
   list-style: none;
@@ -75,4 +76,10 @@ ul.pager {
 .pager li > a:hover {
   background-color: #3677e8;
   color: #ffffff;
+}
+
+.disabled {
+  color: #333333;
+  pointer-events: none;
+  cursor: not-allowed;
 }
