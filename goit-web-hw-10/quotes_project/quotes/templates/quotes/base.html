@@ -19,6 +19,16 @@
           <h1>
             <a href="/" style="text-decoration: none">Quotes to Scrape</a>
           </h1>
+            {% if user.is_authenticated %}
+            <div class="header-actions">
+              <a href="{% url 'quotes:author' %}" class="btn btn-primary"
+                >Add Author</a
+              >
+              <a href="{% url 'quotes:quote' %}" class="btn btn-primary"
+                >Add Quote</a
+              >
+            </div>
+            {% endif %}
         </div>
         <div
           class="col-md-4 d-flex flex-column align-items-end gap-2 ms-auto"

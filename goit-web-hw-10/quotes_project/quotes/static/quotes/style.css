@@ -84,6 +84,13 @@ ul.pager {
   cursor: not-allowed;
 }
 
+.header-actions {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+
 .signup-page {
   padding-top: 45px;
 }
@@ -125,6 +132,11 @@ ul.pager {
   margin-bottom: 18px;
 }
 
+.author-page .signup-field,
+.quote-page .signup-field {
+  margin-bottom: 10px;
+}
+
 .signup-field label {
   display: block;
   margin-bottom: 6px;
@@ -133,7 +145,9 @@ ul.pager {
   font-weight: 400;
 }
 
-.signup-field input {
+.signup-field input,
+.signup-field select,
+.signup-field textarea {
   display: block;
   width: 100%;
   min-height: 38px;
@@ -145,7 +159,9 @@ ul.pager {
   line-height: 1.3;
 }
 
-.signup-field input:focus {
+.signup-field input:focus,
+.signup-field select:focus,
+.signup-field textarea:focus {
   border-color: #159dc1;
   box-shadow: 0 0 0 3px rgba(21, 157, 193, 0.18);
   outline: 0;
@@ -208,6 +224,8 @@ ul.pager {
   }
 
   .signup-field input,
+  .signup-field select,
+  .signup-field textarea,
   .signup-actions button {
     min-height: 38px;
     font-size: 16px;
