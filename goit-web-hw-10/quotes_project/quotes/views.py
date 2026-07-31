@@ -7,7 +7,7 @@ from .forms import AuthorForm, QuoteForm
 
 def main(request, page=1):
     quotes = Quote.objects.select_related(
-        "author").prefetch_related("tags").all()
+        "author").prefetch_related("tags").all().order_by("-created_at")
 
     per_page = 10
     paginator = Paginator(quotes, per_page)
@@ -23,7 +23,7 @@ def main(request, page=1):
 
 
 def author_detail(request, author_id):
-    author = Author.objects.get(id=author_id)
+    author = Author.objects.get(id=author_id).order_by("-created_at")
     return render(request, "quotes/author_detail.html", {"author": author})
 
 
