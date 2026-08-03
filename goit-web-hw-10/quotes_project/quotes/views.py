@@ -23,8 +23,14 @@ def main(request, page=1):
 
 
 def author_detail(request, author_id):
-    author = Author.objects.get(id=author_id).order_by("-created_at")
-    return render(request, "quotes/author_detail.html", {"author": author})
+    author = get_object_or_404(Author, id=author_id)
+    return render(
+        request,
+        "quotes/author_detail.html",
+        {
+            "author": author,
+        }
+    )
 
 
 def tag_detail(request, tag_name):
