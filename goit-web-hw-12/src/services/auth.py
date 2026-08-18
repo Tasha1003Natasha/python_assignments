@@ -14,12 +14,12 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY")
-ALGORITHM = os.getenv("ALGORITHM")
-
 
 class Auth:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    SECRET_KEY = os.getenv("SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM")
 
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
