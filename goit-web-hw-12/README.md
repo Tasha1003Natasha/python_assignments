@@ -1,9 +1,13 @@
-# goit-web-hw-11
+# goit-web-hw-12
 
 Contacts REST API built with FastAPI, SQLAlchemy, PostgreSQL, and Alembic.
 
 ## Features
 
+- User registration and authentication.
+- Password hashing with bcrypt.
+- JWT authorization with access and refresh tokens.
+- Role-based access for selected routes.
 - Create, read, update, and delete contacts.
 - Search contacts by name, surname, or email.
 - Get contacts with birthdays in the next 7 days.
@@ -20,6 +24,8 @@ Contacts REST API built with FastAPI, SQLAlchemy, PostgreSQL, and Alembic.
 - Alembic
 - Docker Compose
 - Pydantic
+- Passlib
+- python-jose
 
 ## Project Structure
 
@@ -43,11 +49,17 @@ Contacts REST API built with FastAPI, SQLAlchemy, PostgreSQL, and Alembic.
     ├── entity/
     │   └── models.py
     ├── repository/
-    │   └── contacts.py
+    │   ├── contacts.py
+    │   └── users.py
     ├── routes/
+    │   ├── auth.py
     │   └── contacts.py
+    ├── services/
+    │   ├── auth.py
+    │   └── roles.py
     └── schemas/
-        └── contact.py
+        ├── contact.py
+        └── user.py
 ```
 
 ## Environment Variables
@@ -60,6 +72,8 @@ POSTGRES_PASSWORD=your_password
 POSTGRES_DB=your_database
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
 ```
 
 When running PostgreSQL through Docker Compose, these variables are used by the `db` service.
@@ -98,7 +112,7 @@ docker ps
 Create a new migration after changing SQLAlchemy models:
 
 ```bash
-alembic revision --autogenerate -m "create contacts table"
+alembic revision --autogenerate -m "Add user"
 ```
 
 Apply migrations:
@@ -151,7 +165,7 @@ The frontend sends requests to:
 http://localhost:8000/api/contacts/
 ```
 
-If you open `http://localhost:8000/api/contacts/` directly in the browser, you will see JSON data from the API. To use the visual interface, open the `frontend/index.html` file.
+The `/api/contacts/` route is protected. Use Swagger authorization or send an `Authorization: Bearer <access_token>` header when calling protected routes.
 
 ## API Endpoints
 
@@ -161,21 +175,91 @@ If you open `http://localhost:8000/api/contacts/` directly in the browser, you w
 GET /api/healthchecker
 ```
 
+### Auth
+
+Register a new user:
+
+```http
+POST /api/auth/signup
+```
+
+Request body:
+
+```json
+{
+  "username": "natalia",
+  "email": "natalia@example.com",
+  "password": "123456"
+}
+```
+
+Password length must be from 6 to 8 characters. If a user with the same email already exists, the server returns `409 Conflict`.
+
+Successful signup returns `201 Created` and user data:
+
+```json
+{
+  "id": 1,
+  "username": "natalia",
+  "email": "natalia@example.com",
+  "role": "user"
+}
+```
+
+Login:
+
+```http
+POST /api/auth/login
+```
+
+The login route uses `OAuth2PasswordRequestForm`, so Swagger shows the fields as `username` and `password`. Enter the user's email in the `username` field:
+
+```text
+username: natalia@example.com
+password: 123456
+```
+
+If the user does not exist or the password is incorrect, the server returns `401 Unauthorized`.
+
+Successful login returns JWT tokens:
+
+```json
+{
+  "access_token": "...",
+  "refresh_token": "...",
+  "token_type": "bearer"
+}
+```
+
+Refresh tokens:
+
+```http
+GET /api/auth/refresh_token
+```
+
+This route expects the `refresh_token` in the `Authorization` header:
+
+```http
+Authorization: Bearer <refresh_token>
+```
+
+In Swagger, use the `Authorize` button and paste only the token value.
+
 ### Contacts
 
-Get all contacts:
+Get current user's contacts. Requires `access_token`:
 
 ```http
 GET /api/contacts/
 ```
 
-Get contacts with pagination:
+Get current user's contacts with pagination. Requires `access_token`:
 
 ```http
 GET /api/contacts/?limit=10&offset=0
 ```
 
-Search contacts by name, surname, or email:
+Search current user's contacts by name, surname, or email. Requires `access_token`:
 
 ```http
 GET /api/contacts/?query=ivan
@@ -183,19 +267,26 @@ GET /api/contacts/?query=petrenko
 GET /api/contacts/?query=gmail.com
 ```
 
-Get contacts with birthdays in the next 7 days:
+Get all contacts without authentication:
+
+```http
+GET /api/contacts/all?limit=10&offset=0
+GET /api/contacts/all?limit=10&offset=0&query=ivan
+```
+
+Get current user's contacts with birthdays in the next 7 days. Requires `access_token` and role `admin` or `moderator`:
 
 ```http
 GET /api/contacts/birthdays
 ```
 
-Get one contact by ID:
+Get one contact by ID. Requires `access_token`:
 
 ```http
 GET /api/contacts/{contact_id}
 ```
 
-Create a contact:
+Create a contact. Requires `access_token` and returns `201 Created`:
 
 ```http
 POST /api/contacts/
@@ -226,17 +317,23 @@ The `info` field is optional:
 }
 ```
 
-Update a contact:
+Update a contact. Requires `access_token`:
 
 ```http
 PUT /api/contacts/{contact_id}
 ```
 
-Delete a contact:
+Delete a contact. Requires `access_token`:
 
 ```http
 DELETE /api/contacts/{contact_id}
 ```
+
+### Authorization In Swagger
+
+For protected contact routes, first call `POST /api/auth/login`, copy `access_token`, click `Authorize`, and paste only the token value.
+
+For `GET /api/auth/refresh_token`, use `refresh_token` instead of `access_token`.
 
 ## Useful Commands
 
