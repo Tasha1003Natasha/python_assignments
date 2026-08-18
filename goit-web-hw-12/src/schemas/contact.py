@@ -1,8 +1,7 @@
-from datetime import date
+from datetime import date, datetime
 import re
-
 from pydantic import BaseModel, Field, ConfigDict, field_validator
-
+from src.schemas.user import UserResponse
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -36,5 +35,8 @@ class ContactResponse(BaseModel):
     phone: str
     birthday: date
     info: str | None = None
+    created_at: datetime | None
+    updated_at: datetime | None
+    user: UserResponse | None
 
     model_config = ConfigDict(from_attributes=True)
