@@ -25,7 +25,7 @@ class Contact(Base):
     updated_at: Mapped[date] = mapped_column('updated_at', DateTime, default=func.now(), onupdate=func.now(),
                                              nullable=True)
     user_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey('users.id'), nullable=True)
+        Integer, ForeignKey('users.id'), nullable=False)
     user: Mapped["User"] = relationship(
         "User", backref="contacts", lazy="joined")
 
