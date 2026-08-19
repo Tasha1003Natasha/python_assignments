@@ -22,14 +22,6 @@ async def get_contacts(limit: int = Query(10, ge=10, le=500), offset: int = Quer
     return contacts
 
 
-@router.get("/all", response_model=list[ContactResponse])
-async def get_all_contacts(limit: int = Query(10, ge=10, le=500), offset: int = Query(0, ge=0),
-                           query: str | None = Query(None),
-                           db: AsyncSession = Depends(get_db)):
-    contacts = await repositories_contacts.get_all_contacts(limit, offset, query, db)
-    return contacts
-
-
 @router.get("/birthdays", response_model=list[ContactResponse], dependencies=[Depends(access_to_route_all)])
 async def get_birthdays(
     db: AsyncSession = Depends(get_db),

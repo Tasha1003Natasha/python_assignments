@@ -23,24 +23,6 @@ async def get_contacts(limit: int, offset: int, query: str | None,
     return contacts.scalars().all()
 
 
-async def get_all_contacts(limit: int, offset: int, query: str | None,
-                           db: AsyncSession):
-    stmt = select(Contact)
-
-    if query:
-        stmt = stmt.where(
-            Contact.name.ilike(f"%{query}%") |
-            Contact.surname.ilike(f"%{query}%") |
-            Contact.email.ilike(f"%{query}%")
-        )
-
-    stmt = stmt.offset(offset).limit(limit)
-
-    contacts = await db.execute(stmt)
-
-    return contacts.scalars().all()
-
-
 async def get_birthdays(db: AsyncSession, user: User):
     today = date.today()
 
