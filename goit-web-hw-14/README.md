@@ -1,4 +1,4 @@
-# Task 1 - Contacts REST API
+# Contacts REST API
 
 FastAPI REST API for contacts with authentication, email verification, password reset, Redis caching/rate limiting, and Cloudinary avatar upload.
 
@@ -19,7 +19,7 @@ FastAPI REST API for contacts with authentication, email verification, password 
 ## Project Structure
 
 ```text
-task1/
+goit-web-hw-14/
 ├── main.py
 ├── alembic.ini
 ├── frontend/
@@ -35,6 +35,13 @@ task1/
     ├── routes/
     ├── schemas/
     └── services/
+docs/
+    ├── conf.py
+    └── index.rst
+pyproject.toml
+poetry.lock
+requirements.txt
+```
 ```
 
 ## Environment Variables
@@ -42,7 +49,7 @@ task1/
 Create `.env` in the project root:
 
 ```text
-goit-web-hw-13/.env
+.env
 ```
 
 Example:
@@ -85,12 +92,17 @@ source venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-## Run Services
-
-PostgreSQL and Redis are started from the root `docker-compose.yml`:
+Install Sphinx for documentation:
 
 ```bash
-cd /goit-web-hw-13
+poetry install --with dev --no-root
+```
+
+## Run Services
+
+PostgreSQL and Redis are started from the root `docker-compose.yml` file:
+
+```bash
 docker compose up -d
 ```
 
@@ -108,26 +120,24 @@ PONG
 
 ## Run Migrations
 
-From `task1`:
+From the repository root:
 
 ```bash
-cd /goit-web-hw-13/task1
-../venv/bin/python -m alembic upgrade head
+python -m alembic upgrade head
 ```
 
 Create a new migration:
 
 ```bash
-../venv/bin/python -m alembic revision --autogenerate -m "Migration name"
+python -m alembic revision --autogenerate -m "Migration name"
 ```
 
 ## Run Backend
 
-From `task1`:
+From the repository root:
 
 ```bash
-cd /goit-web-hw-13/task1
-../venv/bin/python -m uvicorn main:app --reload
+python -m uvicorn main:app --reload
 ```
 
 API docs:
@@ -138,10 +148,10 @@ http://127.0.0.1:8000/docs
 
 ## Run Frontend
 
-In a second terminal:
+In a second terminal, from the repository root:
 
 ```bash
-cd /goit-web-hw-13/task1/frontend
+cd frontend
 python3 -m http.server 5500 --bind 127.0.0.1
 ```
 
@@ -155,6 +165,20 @@ The frontend sends API requests to:
 
 ```text
 http://localhost:8000/api
+```
+
+## Build Documentation
+
+From the repository root:
+
+```bash
+poetry run sphinx-build -b html docs docs/_build/html
+```
+
+Open the generated documentation:
+
+```bash
+open docs/_build/html/index.html
 ```
 
 ## Main API Routes
