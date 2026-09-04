@@ -31,3 +31,7 @@ cloudinary==1.46.2
 fastapi-mail==1.6.5
 pydantic-settings==2.15.0
 email-validator==2.3.0
+pytest>=8.3,<9.0
+pytest-asyncio>=0.24,<1.0
+aiosqlite>=0.20,<1.0
+pytest-cov==7.16.0
