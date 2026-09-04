@@ -8,3 +8,4 @@ dist/
 docs/_build/
 .env
 test.db
+.coverage
