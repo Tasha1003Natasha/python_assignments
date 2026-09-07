@@ -14,6 +14,20 @@ get_refresh_token = HTTPBearer()
 
 @router.post("/signup", response_model=UserResponse, status_code=status.HTTP_201_CREATED,)
 async def signup(body: UserSchema, bt: BackgroundTasks, request: Request, db: AsyncSession = Depends(get_db)):
+    """Register a new user and send an email confirmation message.
+
+    :param body: The registration data with username, email, and password.
+    :type body: UserSchema
+    :param bt: FastAPI background task manager used to send confirmation email.
+    :type bt: BackgroundTasks
+    :param request: The incoming request, used to build the application base URL.
+    :type request: Request
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: The newly created user.
+    :rtype: UserResponse
+    :raises HTTPException: If an account with the same email already exists.
+    """
     exist_user = await repositories_users.get_user_by_email(body.email, db)
     if exist_user:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT,
@@ -27,6 +41,16 @@ async def signup(body: UserSchema, bt: BackgroundTasks, request: Request, db: As
 
 @router.post("/login",  response_model=TokenSchema)
 async def login(body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    """Authenticate a confirmed user and issue JWT tokens.
+
+    :param body: OAuth2 form data containing the user's email and password.
+    :type body: OAuth2PasswordRequestForm
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: Access token, refresh token, and token type.
+    :rtype: TokenSchema
+    :raises HTTPException: If the email, password, or confirmation status is invalid.
+    """
     user = await repositories_users.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(
@@ -47,6 +71,16 @@ async def login(body: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = 
 @router.get('/refresh_token',  response_model=TokenSchema)
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(get_refresh_token),
                         db: AsyncSession = Depends(get_db)):
+    """Refresh the user's access and refresh tokens.
+
+    :param credentials: Bearer credentials containing the current refresh token.
+    :type credentials: HTTPAuthorizationCredentials
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: A new access token, refresh token, and token type.
+    :rtype: TokenSchema
+    :raises HTTPException: If the refresh token is invalid or does not match the stored token.
+    """
     token = credentials.credentials
     email = await auth_service.decode_refresh_token(token)
     user = await repositories_users.get_user_by_email(email, db)
@@ -63,6 +97,16 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Depends(get_
 
 @router.get('/confirmed_email/{token}')
 async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
+    """Confirm a user's email address using a verification token.
+
+    :param token: JWT token generated for email confirmation.
+    :type token: str
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: A message describing the confirmation result.
+    :rtype: dict[str, str]
+    :raises HTTPException: If the token is valid but no user exists for its email.
+    """
     email = await auth_service.get_email_from_token(token)
     user = await repositories_users.get_user_by_email(email, db)
     if user is None:
@@ -77,6 +121,19 @@ async def confirmed_email(token: str, db: AsyncSession = Depends(get_db)):
 @router.post('/request_email')
 async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
                         db: AsyncSession = Depends(get_db)):
+    """Request a new email confirmation message.
+
+    :param body: Request body containing the user's email address.
+    :type body: RequestEmail
+    :param background_tasks: FastAPI background task manager used to send email.
+    :type background_tasks: BackgroundTasks
+    :param request: The incoming request, used to build the application base URL.
+    :type request: Request
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: A generic confirmation email response message.
+    :rtype: dict[str, str]
+    """
     user = await repositories_users.get_user_by_email(body.email, db)
 
     if user is None:
@@ -97,6 +154,22 @@ async def request_password_reset(
     request: Request,
     db: AsyncSession = Depends(get_db)
 ):
+    """Request password reset instructions for an email address.
+
+    The response is intentionally generic so that unknown email addresses are
+    not revealed to clients.
+
+    :param body: Request body containing the user's email address.
+    :type body: RequestEmail
+    :param background_tasks: FastAPI background task manager used to send email.
+    :type background_tasks: BackgroundTasks
+    :param request: The incoming request, used to build the application base URL.
+    :type request: Request
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: A generic password reset response message.
+    :rtype: dict[str, str]
+    """
     user = await repositories_users.get_user_by_email(body.email, db)
 
     if user:
@@ -115,6 +188,16 @@ async def reset_password(
     body: ResetPassword,
     db: AsyncSession = Depends(get_db)
 ):
+    """Reset a user's password using a password reset token.
+
+    :param body: Request body containing a reset token and the new password.
+    :type body: ResetPassword
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: A message confirming that the password was changed.
+    :rtype: dict[str, str]
+    :raises HTTPException: If the token points to a user that does not exist.
+    """
     email = await auth_service.get_email_from_password_reset_token(body.token)
     user = await repositories_users.get_user_by_email(email, db)
 

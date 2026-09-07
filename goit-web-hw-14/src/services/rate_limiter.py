@@ -7,7 +7,16 @@ from src.services.auth import auth_service
 
 
 class RateLimiter:
+    """FastAPI dependency that limits repeated requests with Redis."""
+
     def __init__(self, times: int = 5, seconds: int = 60):
+        """Configure the maximum number of requests for a time window.
+
+        :param times: Allowed number of requests during the window.
+        :type times: int
+        :param seconds: Window length in seconds.
+        :type seconds: int
+        """
         self.times = times
         self.seconds = seconds
         self.cache = redis.Redis(
@@ -24,6 +33,14 @@ class RateLimiter:
         request: Request,
         user: User = Depends(auth_service.get_current_user),
     ):
+        """Check and increment the request counter for the current user.
+
+        :param request: The incoming FastAPI request.
+        :type request: Request
+        :param user: The authenticated user.
+        :type user: User
+        :raises HTTPException: If the request limit has been exceeded.
+        """
         key = f"rate_limit:{user.id}:{request.method}:{request.url.path}"
         requests_count = await self.cache.incr(key)
 

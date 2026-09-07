@@ -36,6 +36,13 @@ cloudinary.config(
     dependencies=[Depends(RateLimiter(times=1, seconds=20))],
 )
 async def get_current_user(user: User = Depends(auth_service.get_current_user)):
+    """Return the currently authenticated user's profile.
+
+    :param user: The authenticated user resolved from the access token.
+    :type user: User
+    :return: The current user's public profile data.
+    :rtype: UserResponse
+    """
     return user
 
 
@@ -49,6 +56,18 @@ async def update_avatar_user(
     user: User = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """Upload a new avatar image and update the user's profile.
+
+    :param file: Uploaded image file to store in Cloudinary.
+    :type file: UploadFile
+    :param user: The authenticated user.
+    :type user: User
+    :param db: The asynchronous database session.
+    :type db: AsyncSession
+    :return: The user profile with the updated avatar URL.
+    :rtype: UserResponse
+    :raises HTTPException: If Cloudinary fails to upload the file.
+    """
     public_id = f"Web16/{user.email}"
     try:
         res = cloudinary.uploader.upload(
