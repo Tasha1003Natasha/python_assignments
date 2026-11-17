@@ -1,0 +1,214 @@
+"""PhotoShare services: auth."""
+
+import pickle
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+import redis
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.ext.asyncio import AsyncSession
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+
+from src.database.db import get_db
+from src.conf.config import config
+from src.repository import users as repository_users
+
+
+class Auth:
+    """Password hashing, scoped JWT issuance and cached user authentication."""
+    pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+    SECRET_KEY = config.SECRET_KEY
+    ALGORITHM = config.ALGORITHM
+
+    cache = redis.Redis(
+        host=config.REDIS_DOMAIN,
+        port=config.REDIS_PORT,
+        db=0,
+        password=config.REDIS_PASSWORD,
+    )
+
+    def verify_password(self, plain_password, hashed_password):
+        """Compare a plaintext password with its stored bcrypt hash.
+        
+        :param plain_password: Plaintext password to verify.
+        :param hashed_password: Stored bcrypt hash.
+        :returns: True if the password matches, otherwise False."""
+        return self.pwd_context.verify(plain_password, hashed_password)
+
+    def get_password_hash(self, password: str):
+        """Hash a plaintext password using the configured bcrypt context.
+        
+        :param password: Password value; repository update functions expect an already hashed value.
+        :returns: Password hash suitable for database storage."""
+        return self.pwd_context.hash(password)
+
+    oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+
+    # define a function to generate a new access token
+    async def create_access_token(self, data: dict, expires_delta: Optional[float] = None):
+        """Sign an access JWT, expiring in 15 minutes unless a lifetime is supplied.
+        
+        :param data: JWT claims; callers provide the subject in sub.
+        :param expires_delta: Optional token lifetime in seconds."""
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + \
+                timedelta(seconds=expires_delta)
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        to_encode.update(
+            {"iat": datetime.now(timezone.utc), "exp": expire, "scope": "access_token"})
+        encoded_access_token = jwt.encode(
+            to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return encoded_access_token
+
+    # define a function to generate a new refresh token
+    async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
+        """Sign a refresh JWT, expiring in seven days unless a lifetime is supplied.
+        
+        :param data: JWT claims; callers provide the subject in sub.
+        :param expires_delta: Optional token lifetime in seconds."""
+        to_encode = data.copy()
+        if expires_delta:
+            expire = datetime.now(timezone.utc) + \
+                timedelta(seconds=expires_delta)
+        else:
+            expire = datetime.now(timezone.utc) + timedelta(days=7)
+        to_encode.update(
+            {"iat": datetime.now(timezone.utc), "exp": expire, "scope": "refresh_token"})
+        encoded_refresh_token = jwt.encode(
+            to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
+        return encoded_refresh_token
+
+    async def decode_refresh_token(self, refresh_token: str):
+        """Validate a refresh JWT and return its subject email.
+        
+        :param refresh_token: Signed refresh JWT."""
+        try:
+            payload = jwt.decode(
+                refresh_token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            if payload['scope'] == 'refresh_token':
+                email = payload['sub']
+                return email
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid scope for token')
+        except JWTError:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                detail='Could not validate credentials')
+
+    async def get_current_user(self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+        """Resolve the authenticated user after validating an access JWT.
+        
+        :param token: Signed JWT, or None when clearing a stored refresh token.
+        :param db: Active asynchronous database session.
+        
+        Access JWT scope and expiration are checked. User objects are cached in Redis for 300 seconds; role changes must invalidate that cache."""
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+        try:
+            # Decode JWT
+            payload = jwt.decode(token, self.SECRET_KEY,
+                                 algorithms=[self.ALGORITHM])
+            if payload['scope'] == 'access_token':
+                email = payload["sub"]
+                if email is None:
+                    raise credentials_exception
+            else:
+                raise credentials_exception
+        except JWTError as e:
+            raise credentials_exception
+
+        user_hash = str(email)
+
+        user = self.cache.get(user_hash)
+
+        if user is None:
+            print("User from database")
+            user = await repository_users.get_user_by_email(email, db)
+            if user is None:
+                raise credentials_exception
+            self.cache.set(user_hash, pickle.dumps(user))
+            self.cache.expire(user_hash, 300)
+        else:
+            print("User from cache")
+            user = pickle.loads(user)
+        return user
+
+    def create_email_token(self, data: dict):
+        """Sign an email-verification JWT valid for one day.
+        
+        :param data: JWT claims; callers provide the subject in sub."""
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(days=1)
+        to_encode.update({"iat": datetime.now(timezone.utc),
+                         "exp": expire, "scope": "email_verification"})
+        token = jwt.encode(to_encode, self.SECRET_KEY,
+                           algorithm=self.ALGORITHM)
+        return token
+
+    async def get_email_from_token(self, token: str):
+        """Validate an email-verification JWT and return its subject email.
+        
+        :param token: Signed JWT, or None when clearing a stored refresh token."""
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY,
+                                 algorithms=[self.ALGORITHM])
+            if payload.get("scope") != "email_verification":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token scope"
+                )
+
+            email = payload["sub"]
+            return email
+        except JWTError as e:
+            print(e)
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid token for email verification",
+            )
+
+    def create_password_reset_token(self, data: dict):
+        """Sign a password-reset JWT valid for 30 minutes.
+        
+        :param data: JWT claims; callers provide the subject in sub."""
+        to_encode = data.copy()
+        expire = datetime.now(timezone.utc) + timedelta(minutes=30)
+        to_encode.update({
+            "iat": datetime.now(timezone.utc),
+            "exp": expire,
+            "scope": "password_reset"
+        })
+        token = jwt.encode(to_encode, self.SECRET_KEY,
+                           algorithm=self.ALGORITHM)
+        return token
+
+    async def get_email_from_password_reset_token(self, token: str):
+        """Validate a password-reset JWT and return its subject email.
+        
+        :param token: Signed JWT, or None when clearing a stored refresh token."""
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY,
+                                 algorithms=[self.ALGORITHM])
+            if payload.get("scope") != "password_reset":
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token scope"
+                )
+            return payload["sub"]
+        except JWTError as e:
+            print(e)
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid token for password reset",
+            )
+
+
+auth_service = Auth()
