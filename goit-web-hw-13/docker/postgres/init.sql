@@ -1,0 +1,1 @@
+-- Database initialization is handled by docker/postgres/init/create-databases.sh.
