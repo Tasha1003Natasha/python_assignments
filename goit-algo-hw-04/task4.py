@@ -1,0 +1,74 @@
+def parse_input(user_input):
+    cmd, *args = user_input.split()
+    cmd = cmd.strip().lower()
+    return cmd, *args
+
+def add_contact(args, contacts):
+    try:
+        name, phone = args
+        contacts[name] = phone
+        return "Contact added"
+    except ValueError:
+        return "Error: you must provide both name and phone number (example: add Alice 12345)"
+
+def change_contact(args, contacts):
+    try:
+        name, phone = args
+        if name in contacts:
+            contacts[name] = phone
+            return f"Contact '{name}' updated."
+        else:
+            return f"Contact '{name}' not found."
+    except ValueError:
+        return "Error: you must provide both name and phone number (example: change Alice 54321)"
+    
+def show_phone(args, contacts):
+    try:
+        if not args:
+            return "Error: you must provide a name (example: phone Alice)"
+        if len(args) > 1:
+            return "Error: only one name expected (example: phone Alice)"
+        
+        name = args[0]
+        if name in contacts:
+            phone = contacts[name]
+            return f"Phone '{name}':'{phone}."
+        else:
+            return f"Phone '{name}' not found."
+    except ValueError:
+        return "Value error"
+    
+def show_all(args, contacts):
+    if not contacts:
+             return "No contacts."
+    if args:
+            return "Error: you must provide (example: all)"
+    return contacts
+
+def main():
+    # консольний бот помічник
+    contacts = {}
+ 
+    print("Welcome to the assistant bot!")
+    while True:
+        user_input = input("Enter a command: ")
+        command, *args = parse_input(user_input)
+
+        if command in ["close", "exit"]:
+            print("Good bye!")
+            break
+        elif command == "hello":
+            print("How can I help you?")
+        elif command == "add":
+            print(add_contact(args, contacts))
+        elif command == "change":
+            print(change_contact(args, contacts))
+        elif command == "phone":
+            print(show_phone(args, contacts))
+        elif command == "all":
+             print(show_all(args,contacts))
+        else:
+            print("Invalid command.")
+  
+if __name__ == "__main__":
+    main()
