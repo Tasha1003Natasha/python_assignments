@@ -17,4 +17,3 @@ def normalize_phone(phone_number):
         return "+" +  normalized
   else:
         return "+38" +  normalized
-
