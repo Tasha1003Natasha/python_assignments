@@ -1,0 +1,6 @@
+aiohttp==3.13.5
+colorama==0.4.6
+names==0.3.0
+websockets
+aiofile
+aiopath
