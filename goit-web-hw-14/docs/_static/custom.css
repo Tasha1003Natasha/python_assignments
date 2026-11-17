@@ -1,0 +1,82 @@
+/* Keep generated API documentation readable on narrow screens. */
+html,
+body {
+    overflow-x: hidden;
+}
+
+div.sphinxsidebar,
+div.sphinxsidebarwrapper {
+    width: 230px;
+    box-sizing: border-box;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+div.sphinxsidebar ul {
+    margin-right: 8px;
+}
+
+div.sphinxsidebar li,
+div.sphinxsidebar a,
+div.sphinxsidebar code,
+div.sphinxsidebar span.pre {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+div.bodywrapper {
+    box-sizing: border-box;
+}
+
+div.body {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+dt,
+dd,
+pre,
+code,
+.sig,
+.sig-name,
+.sig-param,
+.property {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+span.pre,
+.sig span.pre,
+.property span.pre,
+.default_value span.pre {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.sig,
+dl.py dt {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+pre {
+    overflow-x: auto;
+}
+
+@media screen and (max-width: 900px) {
+    div.sphinxsidebar {
+        float: none;
+        width: auto;
+        margin: 0;
+        padding: 0 20px;
+    }
+
+    div.bodywrapper {
+        margin: 0;
+    }
+}
